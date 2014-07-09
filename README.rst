@@ -19,35 +19,35 @@ other cases you'll just have to configure your SMTP server.
 Installing mailflash
 --------------------
 
-Install with **pip** or **easy_install**::
+Install with ``pip`` or ``easy_install``::
 
     pip install mailflash
 
 Configuring mailflash
 ---------------------
 
-**mailflash** is configured through the arguments passed to the constructor of the ``Mail`` class. Those arguments
+``mailflash`` is configured through the arguments passed to the constructor of the ``Mail`` class. Those arguments
 can be coded explicitly in your program or come from a JSON configuration file, as example.
 
-* **server** : default **'localhost'**
+* ``server`` : default ``'localhost'``
 
-* **port** : default **25**
+* ``port`` : default ``25``
 
-* **use_tls** : default **False**
+* ``use_tls`` : default ``False``
 
-* **use_ssl** : default **False**
+* ``use_ssl`` : default ``False``
 
-* **debug** : default **False**
+* ``debug`` : default ``False``
 
-* **username** : default **None**
+* ``username`` : default ``None``
 
-* **password** : default **None**
+* ``password`` : default ``None``
 
-* **default_sender** : default **None**
+* ``default_sender`` : default ``None``
 
-* **max_emails** : default **None**
+* ``max_emails`` : default ``None``
 
-* **suppress** : default **False**
+* ``suppress`` : default ``False``
 
 Emails are managed through a ``Mail`` instance::
 
@@ -59,7 +59,7 @@ In this case all emails are sent using the configuration values that
 were passed to the ``Mail`` class constructor.
 
 Alternatively you can set up your ``Mail`` instance later at configuration time, using the
-**init_mail** method::
+``init_mail`` method::
 
     mail = Mail()
 
@@ -126,7 +126,7 @@ In that case you do things slightly differently::
 The connection to your email host is kept alive and closed automatically once all the messages have been sent.
 
 Some mail servers set a limit on the number of emails sent in a single connection. You can set the max amount
-of emails to send before reconnecting by specifying the **max_emails** setting.
+of emails to send before reconnecting by specifying the ``max_emails`` setting.
 
 Attachments
 -----------
@@ -161,7 +161,7 @@ method::
         assert len(outbox) == 1
         assert outbox[0].subject == "testing"
 
-The **outbox** is a list of ``Message`` instances sent.
+The ``outbox`` is a list of ``Message`` instances sent.
 
 Header injection
 ----------------
@@ -172,7 +172,7 @@ a message with newlines in the subject, sender or recipient addresses will resul
 Signalling support
 ------------------
 
-**mailflash** provides signalling support through a ``email_dispatched`` signal. This is sent whenever an email is
+``mailflash`` provides signalling support through a ``email_dispatched`` signal. This is sent whenever an email is
 dispatched (even if the email is not actually sent, i.e. in a testing environment).
 
 A function connecting to the ``email_dispatched`` signal takes a ``Message`` instance as a first argument, and the
