@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flaskext.mail
-    ~~~~~~~~~~~~~
-
-    Flask extension for sending email.
-
+    :copyright: (c) 2014, Nicolas Vanhoren
     :copyright: (c) 2010 by Dan Jacob.
     :license: BSD, see LICENSE for more details.
 """
@@ -27,8 +23,6 @@ from email.header import Header
 from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
 
-from flask import current_app
-
 PY3 = sys.version_info[0] == 3
 
 if PY3:
@@ -41,7 +35,7 @@ else:
 charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
 
 
-class FlaskMailUnicodeDecodeError(UnicodeDecodeError):
+class MailUnicodeDecodeError(UnicodeDecodeError):
     def __init__(self, obj, *args):
         self.obj = obj
         UnicodeDecodeError.__init__(self, *args)
@@ -77,7 +71,7 @@ def force_text(s, encoding='utf-8', errors='strict'):
             s = s.decode(encoding, errors)
     except UnicodeDecodeError as e:
         if not isinstance(s, Exception):
-            raise FlaskMailUnicodeDecodeError(s, *e.args)
+            raise MailUnicodeDecodeError(s, *e.args)
         else:
             s = ' '.join([force_text(arg, encoding, strings_only,
                     errors) for arg in s])
@@ -145,7 +139,7 @@ class Connection(object):
 
         return host
 
-    def send(self, message, envelope_from=None):
+    def send(self, message):
         """Verifies and sends message.
 
         :param message: Message instance.
@@ -153,24 +147,21 @@ class Connection(object):
         """
         assert message.send_to, "No recipients have been added"
 
-        assert message.sender, (
-                "The message does not specify a sender and a default sender "
-                "has not been configured")
-
-        if message.has_bad_headers():
+        if message.has_bad_headers(self.mail.default_sender):
             raise BadHeaderError
 
         if message.date is None:
             message.date = time.time()
 
+        sender = message.sender or self.mail.default_sender
         if self.host:
-            self.host.sendmail(sanitize_address(envelope_from or message.sender),
+            self.host.sendmail(sanitize_address(sender) if sender is not None else None,
                                message.send_to,
-                               message.as_string(),
+                               message.as_string(self.mail.default_sender),
                                message.mail_options,
                                message.rcpt_options)
 
-        email_dispatched.send(message, app=current_app._get_current_object())
+        email_dispatched.send(message, mail=self.mail)
 
         self.num_emails += 1
 
@@ -249,8 +240,6 @@ class Message(object):
                  mail_options=None,
                  rcpt_options=None):
 
-        sender = sender or current_app.extensions['mail'].default_sender
-
         if isinstance(sender, tuple):
             sender = "%s <%s>" % sender
 
@@ -281,7 +270,7 @@ class Message(object):
         charset = self.charset or 'utf-8'
         return MIMEText(text, _subtype=subtype, _charset=charset)
 
-    def as_string(self):
+    def as_string(self, default_from=None):
         """Creates the email"""
 
         encoding = self.charset or 'utf-8'
@@ -308,7 +297,9 @@ class Message(object):
         else:
             msg['Subject'] = self.subject
 
-        msg['From'] = sanitize_address(self.sender, encoding)
+        sender = self.sender or default_from
+        if sender is not None:
+            msg['From'] = sanitize_address(sender, encoding)
         msg['To'] = ', '.join(list(set(sanitize_addresses(self.recipients, encoding))))
 
         msg['Date'] = formatdate(self.date, localtime=True)
@@ -352,12 +343,13 @@ class Message(object):
     def __str__(self):
         return self.as_string()
 
-    def has_bad_headers(self):
+    def has_bad_headers(self, default_from=None):
         """Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
 
+        sender = self.sender or default_from or ''
         reply_to = self.reply_to or ''
-        for val in [self.subject, self.sender, reply_to] + self.recipients:
+        for val in [self.subject, sender, reply_to] + self.recipients:
             for c in '\r\n':
                 if c in val:
                     return True
@@ -398,8 +390,28 @@ class Message(object):
         self.attachments.append(
             Attachment(filename, content_type, data, disposition, headers))
 
+class Mail(object):
+    """Manages email messaging
+    """
 
-class _MailMixin(object):
+    def __init__(self, **kwargs):
+        self.init_from_dict(kwargs)
+
+    def init_mail(self, server='127.0.0.1', username=None, password=None, port=25, use_tls=False, use_ssl=False,
+                 default_sender=None, debug=False, max_emails=None, suppress=False):
+        self.server = server
+        self.username = username
+        self.password = password
+        self.port = port
+        self.use_tls = use_tls
+        self.use_ssl = use_ssl
+        self.default_sender = default_sender
+        self.debug = debug
+        self.max_emails = max_emails
+        self.suppress = suppress
+
+    def init_from_dict(self, dct):
+        self.init_mail(**dct)
 
     @contextmanager
     def record_messages(self):
@@ -419,7 +431,7 @@ class _MailMixin(object):
 
         outbox = []
 
-        def _record(message, app):
+        def _record(message, mail):
             outbox.append(message)
 
         email_dispatched.connect(_record)
@@ -450,70 +462,7 @@ class _MailMixin(object):
         self.send(Message(*args, **kwargs))
 
     def connect(self):
-        """Opens a connection to the mail host."""
-        app = getattr(self, "app", None) or current_app
-        try:
-            return Connection(app.extensions['mail'])
-        except KeyError:
-            raise RuntimeError("The curent application was not configured with Flask-Mail")
-
-
-class _Mail(_MailMixin):
-    def __init__(self, server, username, password, port, use_tls, use_ssl,
-                 default_sender, debug, max_emails, suppress):
-        self.server = server
-        self.username = username
-        self.password = password
-        self.port = port
-        self.use_tls = use_tls
-        self.use_ssl = use_ssl
-        self.default_sender = default_sender
-        self.debug = debug
-        self.max_emails = max_emails
-        self.suppress = suppress
-
-
-class Mail(_MailMixin):
-    """Manages email messaging
-
-    :param app: Flask instance
-    """
-
-    def __init__(self, app=None):
-        self.app = app
-        if app is not None:
-            self.state = self.init_app(app)
-        else:
-            self.state = None
-
-    def init_app(self, app):
-        """Initializes your mail settings from the application settings.
-
-        You can use this if you want to set up your Mail instance
-        at configuration time.
-
-        :param app: Flask application instance
-        """
-
-        state = _Mail(
-            app.config.get('MAIL_SERVER', '127.0.0.1'),
-            app.config.get('MAIL_USERNAME'),
-            app.config.get('MAIL_PASSWORD'),
-            app.config.get('MAIL_PORT', 25),
-            app.config.get('MAIL_USE_TLS', False),
-            app.config.get('MAIL_USE_SSL', False),
-            app.config.get('MAIL_DEFAULT_SENDER'),
-            int(app.config.get('MAIL_DEBUG', app.debug)),
-            app.config.get('MAIL_MAX_EMAILS'),
-            app.config.get('MAIL_SUPPRESS_SEND', app.testing))
-
-        # register extension with app
-        app.extensions = getattr(app, 'extensions', {})
-        app.extensions['mail'] = state
-        return state
-
-    def __getattr__(self, name):
-        return getattr(self.state, name, None)
+        return Connection(self)
 
 
 signals = blinker.Namespace()

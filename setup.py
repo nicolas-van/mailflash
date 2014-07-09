@@ -32,7 +32,6 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'Flask',
         'blinker',
     ],
     tests_require=[

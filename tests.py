@@ -11,25 +11,14 @@ import re
 from email.header import Header
 from email import charset
 
-from flask import Flask
 from flask_mail import Mail, Message, BadHeaderError, sanitize_address
 
 
 class TestCase(unittest.TestCase):
 
-    TESTING = True
-    MAIL_DEFAULT_SENDER = "support@mysite.com"
-
     def setUp(self):
-        self.app = Flask(__name__)
-        self.app.config.from_object(self)
-        self.assertTrue(self.app.testing)
-        self.mail = Mail(self.app)
-        self.ctx = self.app.test_request_context()
-        self.ctx.push()
-
-    def tearDown(self):
-        self.ctx.pop()
+        self.mail = Mail(default_sender = "support@mysite.com",
+          suppress = True)
 
     def assertIn(self, member, container, msg=None):
         if hasattr(unittest.TestCase, 'assertIn'):
@@ -57,7 +46,6 @@ class TestMessage(TestCase):
     def test_initialize(self):
         msg = Message(subject="subject",
                       recipients=["to@example.com"])
-        self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
         self.assertEqual(msg.recipients, ["to@example.com"])
 
     def test_recipients_properly_initialized(self):
@@ -95,11 +83,6 @@ class TestMessage(TestCase):
                       sender=("tester", "tester@example.com"))
         self.assertEqual('tester <tester@example.com>', msg.sender)
 
-    def test_default_sender_as_tuple(self):
-        self.app.extensions['mail'].default_sender = ('tester', 'tester@example.com')
-        msg = Message(subject="testing")
-        self.assertEqual('tester <tester@example.com>', msg.sender)
-
     def test_reply_to(self):
         msg = Message(subject="testing",
                       recipients=["to@example.com"],
@@ -112,9 +95,9 @@ class TestMessage(TestCase):
         self.assertIn(h.encode(), str(response))
 
     def test_send_without_sender(self):
-        self.app.extensions['mail'].default_sender = None
+        self.mail.default_sender = None
         msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
-        self.assertRaises(AssertionError, self.mail.send, msg)
+        self.mail.send(msg)
 
     def test_send_without_recipients(self):
         msg = Message(subject="testing",
@@ -461,7 +444,6 @@ class TestMail(TestCase):
             self.assertIsNotNone(msg.date)
             self.assertEqual(len(outbox), 1)
             sent_msg = outbox[0]
-            self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_message(self):
 
@@ -474,7 +456,6 @@ class TestMail(TestCase):
             self.assertEqual(msg.subject, "testing")
             self.assertEqual(msg.recipients, ["tester@example.com"])
             self.assertEqual(msg.body, "test")
-            self.assertEqual(msg.sender, self.app.extensions['mail'].default_sender)
 
 
 class TestConnection(TestCase):
@@ -487,7 +468,6 @@ class TestConnection(TestCase):
                                   body="testing")
             self.assertEqual(len(outbox), 1)
             sent_msg = outbox[0]
-            self.assertEqual(sent_msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_single(self):
         with self.mail.record_messages() as outbox:
@@ -501,7 +481,6 @@ class TestConnection(TestCase):
             self.assertEqual(sent_msg.subject, "testing")
             self.assertEqual(sent_msg.recipients, ["to@example.com"])
             self.assertEqual(sent_msg.body, "testing")
-            self.assertEqual(sent_msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_many(self):
         with self.mail.record_messages() as outbox:
@@ -513,13 +492,12 @@ class TestConnection(TestCase):
                     conn.send(msg)
             self.assertEqual(len(outbox), 100)
             sent_msg = outbox[0]
-            self.assertEqual(sent_msg.sender, self.app.extensions['mail'].default_sender)
 
     def test_send_without_sender(self):
-        self.app.extensions['mail'].default_sender = None
+        self.mail.default_sender = None
         msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
         with self.mail.connect() as conn:
-            self.assertRaises(AssertionError, conn.send, msg)
+            conn.send(msg)
 
     def test_send_without_recipients(self):
         msg = Message(subject="testing",
