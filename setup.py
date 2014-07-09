@@ -1,32 +1,30 @@
 """
-Flask-Mail
+mailflash
 ----------
 
-A Flask extension for sending email messages.
+A simple library to send emails.
 
 Please refer to the online documentation for details.
 
 Links
 `````
 
-* `documentation <http://packages.python.org/Flask-Mail>`_
+* `documentation <https://github.com/nicolas-van/mailflash>`_
 """
 from setuptools import setup
 
 
 setup(
-    name='Flask-Mail',
-    version='0.9.0',
-    url='https://github.com/rduplain/flask-mail',
+    name='mailflash',
+    version='0.1.0',
+    url='https://github.com/nicolas-van/mailflash',
     license='BSD',
-    author='Dan Jacob',
-    author_email='danjac354@gmail.com',
-    maintainer='Ron DuPlain',
-    maintainer_email='ron.duplain@gmail.com',
-    description='Flask extension for sending email',
+    author='Nicolas Vanhoren',
+    author_email='nicolas.vanhoren@gmail.com',
+    description='Simple library to send emails',
     long_description=__doc__,
     py_modules=[
-        'flask_mail'
+        'mailflash'
     ],
     test_suite='nose.collector',
     zip_safe=False,
@@ -39,13 +37,10 @@ setup(
         'blinker',
     ],
     classifiers=[
-        'Development Status :: 4 - Beta',
-        'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ]
 )

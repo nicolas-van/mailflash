@@ -11,7 +11,7 @@ import re
 from email.header import Header
 from email import charset
 
-from flask_mail import Mail, Message, BadHeaderError, sanitize_address
+from mailflash import Mail, Message, BadHeaderError, sanitize_address
 
 
 class TestCase(unittest.TestCase):
