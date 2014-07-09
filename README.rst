@@ -182,3 +182,10 @@ A function connecting to the ``email_dispatched`` signal takes a ``Message`` ins
         print(message.subject)
 
     email_dispatched.connect(log_message)
+
+Rationale
+---------
+
+``mailflash`` is a fork of Flask-Mail ( https://github.com/mattupstate/flask-mail ). I needed a good library to send mails
+that could easily be configured using a configuration file. Flask-Mail seemed good for that but I wanted to use it
+outside of a web application. So I removed the dependency to Flask and created mailflash.
