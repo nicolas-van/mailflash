@@ -376,7 +376,7 @@ class Message(object):
         """Checks for bad headers i.e. newlines in subject, sender or recipients.
         """
 
-        sender = self.sender or default_from or ''
+        sender = self.sender or default_from
         reply_to = self.reply_to or ''
         for val in [self.subject, sender, reply_to] + self.recipients:
             for c in '\r\n':
@@ -441,6 +441,18 @@ class Mail(object):
 
     def init_from_dict(self, dct):
         self.init_mail(**dct)
+
+    @property
+    def default_sender(self):
+        if self._default_sender:
+            return self._default_sender
+        import getpass
+        import socket
+        return "%s@%s" % (getpass.getuser(), socket.getfqdn(socket.gethostname()))
+
+    @default_sender.setter
+    def default_sender(self, value):
+        self._default_sender = value
 
     @contextmanager
     def record_messages(self):

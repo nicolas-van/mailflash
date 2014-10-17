@@ -17,8 +17,7 @@ from mailflash import Mail, Message, BadHeaderError, sanitize_address
 class TestCase(unittest.TestCase):
 
     def setUp(self):
-        self.mail = Mail(default_sender = "support@mysite.com",
-          suppress = True)
+        self.mail = Mail(suppress = True)
 
     def assertIn(self, member, container, msg=None):
         if hasattr(unittest.TestCase, 'assertIn'):
@@ -494,10 +493,18 @@ class TestConnection(TestCase):
             sent_msg = outbox[0]
 
     def test_send_without_sender(self):
-        self.mail.default_sender = None
-        msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
-        with self.mail.connect() as conn:
-            conn.send(msg)
+        import getpass
+        import socket
+        me = "%s@%s" % (getpass.getuser(), socket.getfqdn(socket.gethostname()))
+
+        with self.mail.record_messages() as outbox:
+            self.mail.default_sender = None
+            msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
+            with self.mail.connect() as conn:
+                conn.send(msg)
+            self.assertEqual(len(outbox), 1)
+            sent_msg = outbox[0]
+            self.assertEqual(sent_msg.sender, None)
 
     def test_send_without_recipients(self):
         msg = Message(subject="testing",
