@@ -37,8 +37,8 @@ can be coded explicitly in your program or come from a JSON configuration file, 
 * ``username`` : default ``None``
 * ``password`` : default ``None``
 * ``default_sender`` : default ``None``. When the value ``None`` is used mailflash will automatically detect the
-sender's email by using *current_user@current_machine_hostname*. Can also be a two-elements tuple, the first one being
-the name and the second one the email address.
+  sender's email by using *current_user@current_machine_hostname*. Can also be a two-elements tuple, the first one being
+  the name and the second one the email address.
 * ``max_emails`` : default ``None``
 * ``suppress`` : default ``False``
 
