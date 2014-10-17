@@ -30,23 +30,16 @@ Configuring mailflash
 can be coded explicitly in your program or come from a JSON configuration file, as example.
 
 * ``server`` : default ``'localhost'``
-
 * ``port`` : default ``25``
-
 * ``use_tls`` : default ``False``
-
 * ``use_ssl`` : default ``False``
-
 * ``debug`` : default ``False``
-
 * ``username`` : default ``None``
-
 * ``password`` : default ``None``
-
-* ``default_sender`` : default ``None``
-
+* ``default_sender`` : default ``None``. When the value ``None`` is used mailflash will automatically detect the
+sender's email by using *current_user@current_machine_hostname*. Can also be a two-elements tuple, the first one being
+the name and the second one the email address.
 * ``max_emails`` : default ``None``
-
 * ``suppress`` : default ``False``
 
 Emails are managed through a ``Mail`` instance::
@@ -79,8 +72,8 @@ You can set the recipient emails immediately, or individually::
     msg.recipients = ["you@example.com"]
     msg.add_recipient("somebodyelse@example.com")
 
-If you have set ``default_sender`` you don't need to set the message
-sender explicitly, as it will use this configuration value by default::
+Setting the ``sender`` is facultative. If not set, maiflash will use the ``default_sender`` configured in the ``Mail``
+object.::
 
     msg = Message("Hello",
                   recipients=["to@example.com"])
