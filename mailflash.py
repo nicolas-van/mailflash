@@ -448,7 +448,7 @@ class Mail(object):
             return self._default_sender
         import getpass
         import socket
-        return "%s@%s" % (getpass.getuser(), socket.getfqdn(socket.gethostname()))
+        return "%s@%s" % (getpass.getuser(), socket.gethostname())
 
     @default_sender.setter
     def default_sender(self, value):

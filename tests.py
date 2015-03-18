@@ -93,11 +93,6 @@ class TestMessage(TestCase):
         h = Header("Reply-To: %s" % sanitize_address('somebody <somebody@example.com>'))
         self.assertIn(h.encode(), str(response))
 
-    def test_send_without_sender(self):
-        self.mail.default_sender = None
-        msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
-        self.mail.send(msg)
-
     def test_send_without_recipients(self):
         msg = Message(subject="testing",
                       recipients=[],
@@ -495,10 +490,11 @@ class TestConnection(TestCase):
     def test_send_without_sender(self):
         import getpass
         import socket
-        me = "%s@%s" % (getpass.getuser(), socket.getfqdn(socket.gethostname()))
+        me = "%s@%s" % (getpass.getuser(), socket.gethostname())
 
         with self.mail.record_messages() as outbox:
             self.mail.default_sender = None
+            self.assertEqual(self.mail.default_sender, me)
             msg = Message(subject="testing", recipients=["to@example.com"], body="testing")
             with self.mail.connect() as conn:
                 conn.send(msg)
