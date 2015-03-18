@@ -51,6 +51,10 @@ from email.mime.text import MIMEText
 from email.header import Header
 from email.utils import formatdate, formataddr, make_msgid, parseaddr
 from contextlib import contextmanager
+import socket
+import getpass
+import pwd
+import os
 
 PY3 = sys.version_info[0] == 3
 
@@ -446,9 +450,10 @@ class Mail(object):
     def default_sender(self):
         if self._default_sender:
             return self._default_sender
-        import getpass
-        import socket
-        return "%s@%s" % (getpass.getuser(), socket.gethostname())
+        try:
+            return "%s@%s" % (pwd.getpwuid(os.getuid())[0], socket.gethostname())
+        except: # for non-unix systems
+            return "%s@%s" % (getpass.getuser(), socket.gethostname())
 
     @default_sender.setter
     def default_sender(self, value):
